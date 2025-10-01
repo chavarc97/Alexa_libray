@@ -927,12 +927,7 @@ lambda_function.py
 └── utils.py
 ```
 
-**Decisiones clave tomadas:**
 
-1. **Separación de Book y Loan Services:** Aunque están relacionados, tienen ciclos de vida diferentes y responsabilidades distintas
-2. **Repository por entidad:** Permite optimizaciones específicas para cada tipo de datos
-3. **Adapter pattern para persistencia:** Facilita testing con FakeS3Adapter y futuras migraciones
-4. **Central response builder:** Evita duplicación de lógica de construcción de respuestas Alexa
 
 ### Historial de Revisión / Mantenimiento
 
