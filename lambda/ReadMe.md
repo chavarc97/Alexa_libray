@@ -209,16 +209,16 @@ C4Component
             Component(limpiar_handler, "Limpiar Cache Handler", "Python Module", "Clears all data")
             Component(system_handlers, "System Handlers", "Python Modules", "Help, Stop, Fallback intents")
         }
-    
+  
         Container_Boundary(business, "Business Logic Layer") {
             Component(biblioteca_service, "Biblioteca Service", "Python Module", "Core business logic for library operations")
         }
-    
+  
         Container_Boundary(data_layer, "Data Access Layer") {
             Component(database_helper, "Database Helper", "Python Module", "State management")
             Component(session_state, "Session State Manager", "Python Object", "Manages libros, prestamos, devueltos")
         }
-    
+  
         Container_Boundary(utilities, "Utilities Layer") {
             Component(utils, "Utils", "Python Module", "Text normalization functions")
         }
@@ -830,6 +830,7 @@ Ver mas diagrmas en ./VUI_diagrams
 ##Modelo de datos
 
 ##Libro
+
 ```markdown
 {
 "id": str, # se genera automáticamente
@@ -839,7 +840,9 @@ Ver mas diagrmas en ./VUI_diagrams
 "estado": str # "disponible" o "prestado"
 }
 ```
+
 ##Loan
+
 ```markdown
 # Prestamos activos
 {"libro_id": str, "persona": str}
@@ -851,6 +854,98 @@ Ver mas diagrmas en ./VUI_diagrams
 ## 8. Apéndices
 
 ### Decisiones de diseño importantes
+
+### Arquitectura: Monolítico vs Modular
+
+#### **Decisión Tomada:** Arquitectura Modular por Capas
+
+**Estructura Seleccionada:**
+
+```
+lambda_function.py (Router)
+    ↓
+handlers/ (Intent Handlers)
+    ↓
+services/ (Business Logic)
+    ↓
+helpers/ (Data Access)
+```
+
+**Justificación:**
+
+* **Separación de responsabilidades**: Cada capa tiene un propósito único
+* **Testabilidad**: Fácil crear unit tests por componente
+* **Mantenibilidad**: Cambios aislados sin efectos colaterales
+* **Escalabilidad**: Fácil agregar nuevos intents
+
+Esto nos ayudo a tener mejor legibilidad del proyecto y del codigo para no tener que buscar entre <1500 lineas de codigo.
+
+se opto por separar los handlers en su respectiva carpeta como si fueran modulos independientes al igual que el service de la biblioteca todo para integrarlo mejor al armar la lambda function que tomara alexa para correr el proyecto.
+
+### Documentación de Referencia
+
+#### Referencias Técnicas
+
+<pre class="font-ui border-border-100/50 overflow-x-scroll w-full rounded border-[0.5px] shadow-[0_2px_12px_hsl(var(--always-black)/5%)]"><table class="bg-bg-100 min-w-full border-separate border-spacing-0 text-sm leading-[1.88888] whitespace-normal"><thead class="border-b-border-100/50 border-b-[0.5px] text-left"><tr class="[tbody>&]:odd:bg-bg-500/10"><th class="text-text-000 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] px-2 [&:not(:first-child)]:border-l-[0.5px]">Recurso</th><th class="text-text-000 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] px-2 [&:not(:first-child)]:border-l-[0.5px]">URL</th><th class="text-text-000 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] px-2 [&:not(:first-child)]:border-l-[0.5px]">Propósito</th></tr></thead><tbody><tr class="[tbody>&]:odd:bg-bg-500/10"><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]">Alexa Skills Kit SDK</td><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]"><a class="underline" href="https://developer.amazon.com/docs/ask-overviews">https://developer.amazon.com/docs/ask-overviews</a></td><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]">Documentación oficial ASK</td></tr><tr class="[tbody>&]:odd:bg-bg-500/10"><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]">AWS Lambda Python</td><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]"><a class="underline" href="https://docs.aws.amazon.com/lambda/latest/dg/python">https://docs.aws.amazon.com/lambda/latest/dg/python</a></td><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]">Runtime de Lambda</td></tr><tr class="[tbody>&]:odd:bg-bg-500/10"><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]">Alexa Interaction Model</td><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]"><a class="underline" href="https://developer.amazon.com/docs/custom-skills/define-the-interaction-model">https://developer.amazon.com/docs/custom-skills/define-the-interaction-model</a></td><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]">Diseño de intents</td></tr><tr class="[tbody>&]:odd:bg-bg-500/10"><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]">Session Attributes</td><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]"><a class="underline" href="https://developer.amazon.com/docs/custom-skills/manage-skill-session">https://developer.amazon.com/docs/custom-skills/manage-skill-session</a></td><td class="border-t-border-100/50 [&:not(:first-child)]:-x-[hsla(var(--border-100) / 0.5)] border-t-[0.5px] px-2 [&:not(:first-child)]:border-l-[0.5px]">Gestión de sesión</td></tr></tbody></table></pre>
+
+```##
+
+### Metodología Aplicada
+
+**Enfoque: Refactoring Incremental con Estrategia Strangler Fig Pattern**
+
+```
+
+Fase 1: Identificar     Fase 2: Extraer      Fase 3: Migrar
+Boundaries         Módulos Nuevos      y Deprecar Viejo
+│                    │                     │
+▼                    ▼                     ▼
+┌──────────┐         ┌──────────┐          ┌──────────┐
+│ Monolito │────────▶│ Monolito │─────────▶│  Nuevo   │
+│  (850L)  │         │   +      │          │Modular   │
+│          │         │ Módulos  │          │ (< 100L) │
+└──────────┘         └──────────┘          └──────────┘
+
+```
+### Comparación Antes/Después
+
+#### **Estructura de Archivos**
+
+**ANTES (Monolito):**
+
+```
+
+.
+├── lambda_function.py  (<1500 líneas)
+└── requirements.txt
+
+```
+**DESPUÉS (Modular):**
+
+```
+
+.
+├── lambda_function.py          (65 líneas) ← 92% reducción
+├── handlers/                   (13 archivos, 15-30 líneas c/u)
+│   ├── agregar.py
+│   ├── listar.py
+│   ├── buscar.py
+│   ├── eliminar.py
+│   ├── prestar.py
+│   ├── devolver.py
+│   ├── consultar_prestamos.py
+│   ├── consultar_devueltos.py
+│   ├── decir_titulo.py
+│   ├── limpiar_cache.py
+│   ├── help_intent.py
+│   ├── stop_intent.py
+│   └── fallback_intent.py
+├── services/
+│   └── biblioteca_service.py   (120 líneas)
+├── helpers/
+│   └── database.py             (10 líneas)
+├── shared/
+│   └── utils.py                (5 líneas)
 
 1. **Patrón Repository:** Abstrae el acceso a datos permitiendo cambiar de S3 a otra base de datos
 2. **Service Layer:** Centraliza lógica de negocio evitando duplicación
@@ -906,6 +1001,7 @@ Dividir en BookService y LoanService si aumenta la complejidad.
 Implementar un módulo de respuestas común.
 
 Preparar repositorios para migrar a S3/Dynamo sin alterar los handlers.
+
 #### Paso 3: Reestructuración de archivos
 
 ```markdown
@@ -926,8 +1022,6 @@ lambda_function.py
 │ └── utils.py
 └── utils.py
 ```
-
-
 
 ### Historial de Revisión / Mantenimiento
 
