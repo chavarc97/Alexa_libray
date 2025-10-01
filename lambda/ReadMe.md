@@ -827,35 +827,22 @@ Ver mas diagrmas en ./VUI_diagrams
 
 ## 7. Secciones adicionales
 
-### Modelo de datos
+##Modelo de datos
+##Libro
+{
+"id": str, # se genera automáticamente
+"titulo": str, # normalizado para evitar duplicados
+"autor": str, # "Desconocido" si no se brinda
+"tipo": str, # género o categoría del libro
+"estado": str # "disponible" o "prestado"
+}
+##Loan
+# Prestamos activos
+{"libro_id": str, "persona": str}
 
-#### Book Model
 
-```python
-class Book:
-    id: str
-    titulo: str
-    autor: str
-    tipo: str
-    fecha_agregado: datetime
-    estado: BookStatus  # DISPONIBLE, PRESTADO
-    total_prestamos: int
-```
-
-#### Loan Model
-
-```python
-class Loan:
-    id: str
-    libro_id: str
-    persona: str
-    fecha_prestamo: datetime
-    fecha_limite: datetime
-    fecha_devolucion: Optional[datetime]
-    estado: LoanStatus  # ACTIVO, DEVUELTO, VENCIDO
-```
-
----
+# Devueltos
+{"libro_id": str, "persona": str}
 
 ## 8. Apéndices
 
