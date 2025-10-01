@@ -1,0 +1,344 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "mi biblioteca",
+            "intents": [
+                {
+                    "name": "AgregarAutorIntent",
+                    "slots": [
+                        {
+                            "name": "autor",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "agrega el autor {autor}",
+                        "agregar autor {autor}",
+                        "autor {autor}",
+                        "el autor es {autor}",
+                        "registra autor {autor}"
+                    ]
+                },
+                {
+                    "name": "AgregarLibroIntent",
+                    "slots": [
+                        {
+                            "name": "titulo",
+                            "type": "AMAZON.SearchQuery"
+                        },
+                        {
+                            "name": "autor",
+                            "type": "AMAZON.SearchQuery"
+                        },
+                        {
+                            "name": "tipo",
+                            "type": "GENERO_LIBRO"
+                        }
+                    ],
+                    "samples": [
+                        "agregar",
+                        "agregar un libro",
+                        "agrega un libro",
+                        "agrega el libro {titulo}",
+                        "agrega {titulo}",
+                        "agregar libro {titulo}",
+                        "quiero agregar {titulo}",
+                        "agrega un libro de {autor}",
+                        "agrega un libro",
+                        "de genero {tipo}",
+                        "el genero es {tipo}",
+                        "genero {tipo}"
+                    ]
+                },
+                {
+                    "name": "EliminarLibroIntent",
+                    "slots": [
+                        {
+                            "name": "id_libro",
+                            "type": "AMAZON.SearchQuery"
+                        },
+                        {
+                            "name": "titulo",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "eliminar",
+                        "elimina un libro",
+                        "elimina el libro {titulo}",
+                        "eliminar {titulo}",
+                        "borra el libro {titulo}",
+                        "elimina el libro con id {id_libro}"
+                    ]
+                },
+                {
+                    "name": "ListarLibrosIntent",
+                    "slots": [],
+                    "samples": [
+                        "listar",
+                        "lista mis libros",
+                        "que libros tengo",
+                        "muestra mis libros",
+                        "quiero ver mis libros",
+                        "listar libros"
+                    ]
+                },
+                {
+                    "name": "BuscarLibroIntent",
+                    "slots": [
+                        {
+                            "name": "titulo",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "buscar",
+                        "busca el libro {titulo}",
+                        "buscar {titulo}",
+                        "encuentra {titulo}",
+                        "tienes {titulo}"
+                    ]
+                },
+                {
+                    "name": "PrestarLibroIntent",
+                    "slots": [
+                        {
+                            "name": "id_libro",
+                            "type": "AMAZON.SearchQuery"
+                        },
+                        {
+                            "name": "titulo",
+                            "type": "AMAZON.SearchQuery"
+                        },
+                        {
+                            "name": "persona",
+                            "type": "AMAZON.FirstName"
+                        }
+                    ],
+                    "samples": [
+                        "prestar",
+                        "presta el libro {titulo}",
+                        "presta el libro con id {id_libro}",
+                        "quiero prestar {titulo}",
+                        "presta el libro a {persona}"
+                    ]
+                },
+                {
+                    "name": "DevolverLibroIntent",
+                    "slots": [
+                        {
+                            "name": "id_libro",
+                            "type": "AMAZON.SearchQuery"
+                        },
+                        {
+                            "name": "titulo",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "devolver",
+                        "devuelve el libro {titulo}",
+                        "devuelve el libro con id {id_libro}",
+                        "quiero devolver {titulo}",
+                        "devolver {titulo}"
+                    ]
+                },
+                {
+                    "name": "ConsultarPrestamosIntent",
+                    "slots": [],
+                    "samples": [
+                        "consultar prestamos",
+                        "consulta mis prestamos",
+                        "que libros estan prestados",
+                        "cuales tengo prestados",
+                        "ver prestamos"
+                    ]
+                },
+                {
+                    "name": "ConsultarDevueltosIntent",
+                    "slots": [],
+                    "samples": [
+                        "consultar devueltos",
+                        "consulta mis devueltos",
+                        "libros devueltos",
+                        "que libros se devolvieron"
+                    ]
+                },
+                {
+                    "name": "LimpiarCacheIntent",
+                    "slots": [],
+                    "samples": [
+                        "limpiar datos",
+                        "limpia mis datos",
+                        "borra todo",
+                        "reinicia mi biblioteca",
+                        "limpiar cache"
+                    ]
+                },
+                {
+                    "name": "SiguientePaginaIntent",
+                    "slots": [],
+                    "samples": [
+                        "siguiente pagina",
+                        "siguiente",
+                        "pasa a la siguiente"
+                    ]
+                },
+                {
+                    "name": "SalirListadoIntent",
+                    "slots": [],
+                    "samples": [
+                        "salir del listado",
+                        "terminar listado",
+                        "ya no quiero ver la lista"
+                    ]
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.FallbackIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                }
+            ],
+            "types": [
+                {
+                    "name": "GENERO_LIBRO",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "ciencia ficcion"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "fantasia"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "misterio"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "terror"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "romance"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "aventura"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "historia"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "realismo magico"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "novela grafica"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "dialog": {
+            "intents": [
+                {
+                    "name": "AgregarLibroIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "titulo",
+                            "type": "AMAZON.SearchQuery",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.titulo"
+                            }
+                        },
+                        {
+                            "name": "tipo",
+                            "type": "GENERO_LIBRO",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.tipo"
+                            }
+                        },
+                        {
+                            "name": "autor",
+                            "type": "AMAZON.SearchQuery",
+                            "confirmationRequired": false,
+                            "elicitationRequired": false,
+                            "prompts": {}
+                        }
+                    ]
+                }
+            ],
+            "delegationStrategy": "SKILL_RESPONSE"
+        },
+        "prompts": [
+            {
+                "id": "Elicit.Slot.titulo",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Perfecto. ¿Cual es el titulo del libro?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Dime el titulo exacto del libro que quieres agregar."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Para registrarlo bien, ¿como se llama el libro?"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.tipo",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Ahora, ¿de que genero es? Por ejemplo ciencia ficcion fantasia misterio o terror."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "¿Que genero tiene el libro? Puedes decir novela historica terror o romance."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Para clasificarlo mejor dime el genero del libro."
+                    }
+                ]
+            }
+        ]
+    }
+}
