@@ -907,27 +907,21 @@ Monolito original → Responsabilidades identificadas:
 
 ```markdown
 Estructura final:
-lambda_function.py (orchestrator)
+lambda_function.py
 ├── handlers/
-│   ├── launch_handler.py
-│   ├── add_book_handler.py
-│   ├── list_books_handler.py
-│   └── delete_book_handler.py (nuevo)
+│ ├── agregar.py
+│ ├── listar.py
+│ ├── eliminar.py
+│ ├── prestar.py
+│ ├── devolver.py
+│ └── otros handlers
 ├── services/
-│   ├── book_service.py
-│   ├── loan_service.py
-│   └── validation_service.py
-├── repositories/
-│   ├── book_repository.py
-│   └── loan_repository.py
-├── models/
-│   ├── book.py
-│   └── loan.py
-├── adapters/
-│   ├── s3_adapter.py
-│   └── cache_adapter.py
-└── utils/
-    └── response_builder.py
+│ └── biblioteca_service.py
+├── helpers/
+│ └── database.py
+├── shared/
+│ └── utils.py
+└── utils.py
 ```
 
 **Decisiones clave tomadas:**
