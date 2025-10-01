@@ -8,6 +8,7 @@
 
 **Historial de revisiones:**
 
+
 | Versión | Fecha      | Autor(es) | Cambios Realizados              | Aprobado por      |
 | -------- | ---------- | --------- | ------------------------------- | ----------------- |
 | 0.1      | 2025-09-22 | Equipo    | Creación inicial del documento | Líder del equipo |
@@ -16,8 +17,8 @@
 ## 1. Introducción (Caso de uso)
 
 ### Descripción general del sistema
-El proyecto consiste en una skill de Alexa llamada Manolito, que sirve para manejar una biblioteca personal de libros. El usuario puede hablar con Alexa para agregar, eliminar, listar, buscar, prestar y devolver libros, todo mediante comandos de voz. La información se guarda en la nube (Amazon S3). 
 
+El proyecto consiste en una skill de Alexa llamada Manolito, que sirve para manejar una biblioteca personal de libros. El usuario puede hablar con Alexa para agregar, eliminar, listar, buscar, prestar y devolver libros, todo mediante comandos de voz. La información se guarda en la nube (Amazon S3).
 
 ### Objetivo del documento
 
@@ -90,6 +91,7 @@ El código actual está implementado como un monolito en un único archivo `lamb
 
 ## 3. Requerimientos funcionales
 
+
 | ID    | Descripción                     | Actor   | Prioridad | Criterios de aceptación                                              |
 | ----- | -------------------------------- | ------- | --------- | --------------------------------------------------------------------- |
 | RF-01 | Agregar libros mediante diálogo | Usuario | Alta      | El sistema debe solicitar título, autor y tipo en pasos secuenciales |
@@ -106,6 +108,7 @@ El código actual está implementado como un monolito en un único archivo `lamb
 ---
 
 ## 4. Requerimientos no funcionales
+
 
 | ID     | Atributo       | Descripción                 | Métricas / criterios cuantitativos     |
 | ------ | -------------- | ---------------------------- | --------------------------------------- |
@@ -186,60 +189,394 @@ Rel(skill_app, memcache, "Reads/Writes data")
 #### Diagrama de Componentes (Level 3)
 
 ```mermaid
-C4Container
-title Container diagram for Book Library System
+C4Component
+    title Component diagram for Alexa Biblioteca Skill
 
-Container_Boundary(presentation, "Presentation Layer") {
-  Container(LH, "Launch Handler")
-  Container(ALH, "Add Book Handler")
-  Container(LLH, "List Books Handler")
-  Container(PLH, "Loan Handler")
-  Container(RH, "Return Handler")
-  Container(FBH, "Fallback Handler")
-}
+    Container_Boundary(lambda_container, "AWS Lambda Container") {
+        Component(lambda_handler, "Lambda Handler", "Python Module", "Entry point and request router")
+        Component(intent_router, "Intent Router", "Dictionary", "Maps intents to handlers")
 
-Container_Boundary(business, "Business Layer") {
-  Container(BS, "Book Service")
-  Container(LS, "Loan Service")
-  Container(US, "User Service")
-  Container(VS, "Validation Service")
-}
+        Container_Boundary(handlers, "Intent Handlers Layer") {
+            Component(agregar_handler, "Agregar Libro Handler", "Python Module", "Handles book creation")
+            Component(listar_handler, "Listar Libros Handler", "Python Module", "Lists all books")
+            Component(buscar_handler, "Buscar Libro Handler", "Python Module", "Searches books by title")
+            Component(eliminar_handler, "Eliminar Libro Handler", "Python Module", "Deletes books")
+            Component(prestar_handler, "Prestar Libro Handler", "Python Module", "Manages book loans")
+            Component(devolver_handler, "Devolver Libro Handler", "Python Module", "Manages book returns")
+            Component(consultar_p_handler, "Consultar Préstamos Handler", "Python Module", "Shows active loans")
+            Component(consultar_d_handler, "Consultar Devueltos Handler", "Python Module", "Shows returned books")
+            Component(decir_titulo_handler, "Decir Título Handler", "Python Module", "Contextual title handler")
+            Component(limpiar_handler, "Limpiar Cache Handler", "Python Module", "Clears all data")
+            Component(system_handlers, "System Handlers", "Python Modules", "Help, Stop, Fallback intents")
+        }
+    
+        Container_Boundary(business, "Business Logic Layer") {
+            Component(biblioteca_service, "Biblioteca Service", "Python Module", "Core business logic for library operations")
+        }
+    
+        Container_Boundary(data_layer, "Data Access Layer") {
+            Component(database_helper, "Database Helper", "Python Module", "State management")
+            Component(session_state, "Session State Manager", "Python Object", "Manages libros, prestamos, devueltos")
+        }
+    
+        Container_Boundary(utilities, "Utilities Layer") {
+            Component(utils, "Utils", "Python Module", "Text normalization functions")
+        }
+    }
 
-Container_Boundary(data, "Data Layer") {
-  Container(BR, "Book Repository")
-  Container(LR, "Loan Repository")
-  Container(UR, "User Repository")
-}
+    Container_Boundary(storage, "Storage Layer") {
+        ComponentDb(session_storage, "Session Attributes", "Alexa Session", "Temporary session storage")
+    }
 
-Container(s3a, "S3 Adapter", "Infrastructure", "Handles storage interactions")
-Container(ca, "Cache Adapter", "Infrastructure", "Caches data for fast access")
-Container(um, "Utils Manager", "Infrastructure", "Utility functions manager")
+    System_Ext(alexa_service, "Alexa Service", "Amazon Alexa Platform")
 
-Container_Boundary(models, "Models") {
-  Container(BM, "Book Model")
-  Container(LM, "Loan Model")
-  Container(U_M, "User Model")
-}
 
-Rel(LH, US, "Calls")
-Rel(ALH, BS, "Calls")
-Rel(LLH, BS, "Calls")
-Rel(PLH, LS, "Calls")
-Rel(RH, LS, "Calls")
-Rel(BS, BR, "Uses")
-Rel(LS, LR, "Uses")
-Rel(US, UR, "Uses")
-Rel(BR, s3a, "Uses")
-Rel(LR, s3a, "Uses")
-Rel(UR, s3a, "Uses")
-Rel(BR, ca, "Uses")
-Rel(LR, ca, "Uses")
-Rel(UR, ca, "Uses")
+  Rel(alexa_service, lambda_handler, "Sends IntentRequest", "HTTPS/JSON")
+    Rel(lambda_handler, intent_router, "Uses")
+    Rel(lambda_handler, database_helper, "Gets state")
+  
+    Rel(intent_router, agregar_handler, "Routes intent")
+    Rel(intent_router, listar_handler, "Routes intent")
+    Rel(intent_router, buscar_handler, "Routes intent")
+    Rel(intent_router, eliminar_handler, "Routes intent")
+    Rel(intent_router, prestar_handler, "Routes intent")
+    Rel(intent_router, devolver_handler, "Routes intent")
+    Rel(intent_router, consultar_p_handler, "Routes intent")
+    Rel(intent_router, consultar_d_handler, "Routes intent")
+    Rel(intent_router, decir_titulo_handler, "Routes intent")
+    Rel(intent_router, limpiar_handler, "Routes intent")
+    Rel(intent_router, system_handlers, "Routes intent")
+  
+    Rel(agregar_handler, biblioteca_service, "Calls add_book()")
+    Rel(listar_handler, biblioteca_service, "Calls list_books()")
+    Rel(buscar_handler, biblioteca_service, "Calls search_books()")
+    Rel(eliminar_handler, biblioteca_service, "Calls delete_book()")
+    Rel(prestar_handler, biblioteca_service, "Calls borrow_book()")
+    Rel(devolver_handler, biblioteca_service, "Calls return_book()")
+    Rel(decir_titulo_handler, biblioteca_service, "Calls add_book() / delete_book()")
+  
+    Rel(agregar_handler, session_state, "Modifies state")
+    Rel(listar_handler, session_state, "Reads state")
+    Rel(buscar_handler, session_state, "Reads state")
+    Rel(eliminar_handler, session_state, "Modifies state")
+    Rel(prestar_handler, session_state, "Modifies state")
+    Rel(devolver_handler, session_state, "Modifies state")
+    Rel(consultar_p_handler, session_state, "Reads state")
+    Rel(consultar_d_handler, session_state, "Reads state")
+    Rel(decir_titulo_handler, session_state, "Modifies state")
+    Rel(limpiar_handler, session_state, "Clears state")
+  
+    Rel(biblioteca_service, utils, "Uses norm()")
+    Rel(biblioteca_service, session_state, "Reads/Writes")
+  
+    Rel(database_helper, session_state, "Creates/Manages")
+    Rel(session_state, session_storage, "Persists to", "Session Attributes")
+  
+    Rel(lambda_handler, alexa_service, "Returns response", "HTTPS/JSON")
+
+ 
 ```
 
 **Enlaces a diagramas detallados:**
 
-<!-- * [Repositorio GitHub - Diagramas C4](https://github.com/team/biblioteca-skill/docs/architecture) -->
+```plantuml
+@startuml  
+title C4 - Level 4 - Alexa Biblioteca Skill - Code Diagram
+
+' ==================== ENUMS ====================
+enum BookStatus {
+    DISPONIBLE : "disponible"
+    PRESTADO : "prestado"
+}
+
+' ==================== DOMAIN MODELS ====================
+class Book {
+    - id: str
+    - titulo: str
+    - autor: str
+    - tipo: str
+    - estado: BookStatus
+
+    + to_dict() : dict
+    + from_dict(data: dict) : Book
+    + __str__() : str
+}
+
+class Prestamo {
+    - libro_id: str
+    - a: str
+
+    + to_dict() : dict
+    + from_dict(data: dict) : Prestamo
+    + __str__() : str
+}
+
+' ==================== INTERFACES ====================
+interface ISessionStorage {
+  + get_state(event) : Dict[str, Any]
+  + save_state(event, state: Dict[str, Any]) : None
+}
+
+interface IBookOperations {
+  + add_book(state: Dict, titulo: str, autor: str, tipo: str) : Tuple[bool, Union[str, Book]]
+  + list_books(state: Dict) : List[Book]
+  + search_books(state: Dict, termino: str) : List[Book]
+  + delete_book(state: Dict, titulo: str, libro_id: str) : Tuple[bool, Union[str, Book]]
+}
+
+interface ILoanOperations {
+  + borrow_book(state: Dict, libro_or_title: str, persona: str) : Tuple[bool, str]
+  + return_book(state: Dict, libro_or_title: str) : Tuple[bool, str]
+}
+
+' ==================== DATA LAYER ====================
+class DatabaseHelper {
+  + get_state(event) : Dict[str, Any]
+  - _get_initial_state() : Dict[str, Any]
+  - _validate_state(state: Dict) : Dict[str, Any]
+}
+
+class SessionState {
+  + libros: List[Book]
+  + prestamos: List[Prestamo]
+  + devueltos: List[Prestamo]
+  + __await__: Optional[str]
+  
+  + get_libros() : List[Book]
+  + add_libro(libro: Book) : None
+  + remove_libro(libro_id: str) : bool
+  + clear() : None
+}
+
+' ==================== SERVICES ====================
+class BibliotecaService {
+  + add_book(state: Dict, titulo: str, autor: Optional[str], tipo: Optional[str]) : Tuple[bool, Union[str, Book]]
+  + list_books(state: Dict) : List[Book]
+  + search_books(state: Dict, termino: str) : List[Book]
+  + delete_book(state: Dict, titulo: Optional[str], libro_id: Optional[str]) : Tuple[bool, Union[str, Book]]
+  + borrow_book(state: Dict, libro_or_title: str, persona: Optional[str]) : Tuple[bool, str]
+  + return_book(state: Dict, libro_or_title: str) : Tuple[bool, str]
+  - _next_id(state: Dict) : str
+  - _find_book(state: Dict, libro_id: str, titulo: str) : Optional[Book]
+  - _is_book_loaned(state: Dict, libro_id: str) : bool
+}
+
+' ==================== UTILITIES ====================
+class Utils {
+  + norm(s: str) : str
+}
+
+' ==================== LAMBDA HANDLER ====================
+class LambdaFunction {
+  - _ROUTES: Dict[str, str]
+  
+  + lambda_handler(event, context) : Dict[str, Any]
+  - _say(text: str, reprompt: str, end: bool, session: Dict) : Dict[str, Any]
+  - _load_handler(intent_name: str) : Callable
+  - _get_state(event: Dict) : Dict[str, Any]
+}
+
+' ==================== INTENT HANDLERS ====================
+abstract class BaseHandler {
+  # _slot(event: Dict, name: str) : Optional[str]
+  + {abstract} handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class AgregarLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _validate_titulo(titulo: str) : bool
+  - _request_titulo(state: Dict) : Tuple[str, str]
+}
+
+class ListarLibrosHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _format_book_list(libros: List[Book], max_items: int) : str
+}
+
+class BuscarLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _format_search_results(resultados: List[Book]) : str
+}
+
+class EliminarLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _validate_deletion(state: Dict, libro_id: str) : bool
+  - _request_titulo(state: Dict) : Tuple[str, str]
+}
+
+class PrestarLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _validate_loan(libro: Book) : bool
+  - _request_libro(state: Dict) : Tuple[str, str]
+}
+
+class DevolverLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _validate_return(state: Dict, libro_id: str) : bool
+  - _request_libro(state: Dict) : Tuple[str, str]
+}
+
+class ConsultarPrestamosHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _format_prestamos(prestamos: List[Prestamo]) : str
+}
+
+class ConsultarDevueltosHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _format_devueltos(devueltos: List[Prestamo]) : str
+}
+
+class DecirTituloHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _handle_agregar_context(event: Dict, state: Dict, titulo: str) : Tuple[str, str]
+  - _handle_eliminar_context(event: Dict, state: Dict, titulo: str) : Tuple[str, str]
+  - _handle_no_context(titulo: str) : Tuple[str, str]
+}
+
+class LimpiarCacheHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class HelpHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class StopHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class FallbackHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class SiguientePaginaHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class SalirListadoHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+' ==================== RELATIONSHIPS ====================
+
+' Interface implementations
+DatabaseHelper ..|> ISessionStorage
+BibliotecaService ..|> IBookOperations
+BibliotecaService ..|> ILoanOperations
+
+' Lambda Function relationships
+LambdaFunction --> DatabaseHelper : uses
+LambdaFunction ..> AgregarLibroHandler : loads
+LambdaFunction ..> ListarLibrosHandler : loads
+LambdaFunction ..> BuscarLibroHandler : loads
+LambdaFunction ..> EliminarLibroHandler : loads
+LambdaFunction ..> PrestarLibroHandler : loads
+LambdaFunction ..> DevolverLibroHandler : loads
+LambdaFunction ..> ConsultarPrestamosHandler : loads
+LambdaFunction ..> ConsultarDevueltosHandler : loads
+LambdaFunction ..> DecirTituloHandler : loads
+LambdaFunction ..> LimpiarCacheHandler : loads
+LambdaFunction ..> HelpHandler : loads
+LambdaFunction ..> StopHandler : loads
+LambdaFunction ..> FallbackHandler : loads
+LambdaFunction ..> SiguientePaginaHandler : loads
+LambdaFunction ..> SalirListadoHandler : loads
+
+' Handler inheritance
+AgregarLibroHandler --|> BaseHandler
+ListarLibrosHandler --|> BaseHandler
+BuscarLibroHandler --|> BaseHandler
+EliminarLibroHandler --|> BaseHandler
+PrestarLibroHandler --|> BaseHandler
+DevolverLibroHandler --|> BaseHandler
+ConsultarPrestamosHandler --|> BaseHandler
+ConsultarDevueltosHandler --|> BaseHandler
+DecirTituloHandler --|> BaseHandler
+LimpiarCacheHandler --|> BaseHandler
+HelpHandler --|> BaseHandler
+StopHandler --|> BaseHandler
+FallbackHandler --|> BaseHandler
+SiguientePaginaHandler --|> BaseHandler
+SalirListadoHandler --|> BaseHandler
+
+' Handler to Service dependencies
+AgregarLibroHandler --> BibliotecaService : uses add_book()
+ListarLibrosHandler --> BibliotecaService : uses list_books()
+BuscarLibroHandler --> BibliotecaService : uses search_books()
+EliminarLibroHandler --> BibliotecaService : uses delete_book()
+PrestarLibroHandler --> BibliotecaService : uses borrow_book()
+DevolverLibroHandler --> BibliotecaService : uses return_book()
+DecirTituloHandler --> BibliotecaService : uses add_book(), delete_book()
+
+' Handler to State dependencies
+AgregarLibroHandler --> SessionState : modifies
+ListarLibrosHandler --> SessionState : reads
+BuscarLibroHandler --> SessionState : reads
+EliminarLibroHandler --> SessionState : modifies
+PrestarLibroHandler --> SessionState : modifies
+DevolverLibroHandler --> SessionState : modifies
+ConsultarPrestamosHandler --> SessionState : reads
+ConsultarDevueltosHandler --> SessionState : reads
+DecirTituloHandler --> SessionState : modifies
+LimpiarCacheHandler --> SessionState : clears
+
+' Service to Utils and State
+BibliotecaService --> Utils : uses norm()
+BibliotecaService --> SessionState : reads/writes
+
+' DatabaseHelper to SessionState
+DatabaseHelper --> SessionState : creates/manages
+
+' Model relationships
+SessionState *-- Book : contains
+SessionState *-- Prestamo : contains
+Book --> BookStatus : uses
+Prestamo --> Book : references by libro_id
+
+' Notes
+note right of LambdaFunction
+  Entry point for all Alexa requests.
+  Routes intents to appropriate handlers
+  using the _ROUTES dictionary.
+end note
+
+note right of BibliotecaService
+  Core business logic layer.
+  Handles all CRUD operations for books,
+  loans, and returns. Uses Utils for
+  text normalization.
+end note
+
+note right of SessionState
+  In-memory state storage using
+  Alexa sessionAttributes.
+  Persists between intents within
+  the same session.
+end note
+
+note right of DecirTituloHandler
+  Context-aware handler that processes
+  title input based on conversation state
+  (__await__ flag in SessionState).
+end note
+
+@enduml
+```
 
 ---
 
@@ -547,7 +884,7 @@ El archivo `lambda_function.py` original presentaba los siguientes problemas est
 
 #### Paso 1: Identificación de responsabilidades
 
-``` markdown
+```markdown
 Monolito original → Responsabilidades identificadas:
 - Manejo de requests/responses Alexa → Handlers (Presentation)
 - Lógica de negocio → Services (Business)
@@ -610,6 +947,7 @@ lambda_function.py (orchestrator)
 4. **Central response builder:** Evita duplicación de lógica de construcción de respuestas Alexa
 
 ### Historial de Revisión / Mantenimiento
+
 
 | Versión | Fecha    | Autor(es)               | Cambios Realizados                                      | Aprobado por           | Comentarios adicionales               |
 | -------- | -------- | ----------------------- | ------------------------------------------------------- | ---------------------- | ------------------------------------- |

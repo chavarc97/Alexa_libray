@@ -1,49 +1,84 @@
-C4Container
-title Container diagram for Book Library System
+C4Component
+    title Component diagram for Alexa Biblioteca Skill
 
-Container_Boundary(presentation, "Presentation Layer") {
-  Container(LH, "Launch Handler")
-  Container(ALH, "Add Book Handler")
-  Container(LLH, "List Books Handler")
-  Container(PLH, "Loan Handler")
-  Container(RH, "Return Handler")
-  Container(FBH, "Fallback Handler")
-}
+    Container_Boundary(lambda_container, "AWS Lambda Container") {
+        Component(lambda_handler, "Lambda Handler", "Python Module", "Entry point and request router")
+        Component(intent_router, "Intent Router", "Dictionary", "Maps intents to handlers")
 
-Container_Boundary(business, "Business Layer") {
-  Container(BS, "Book Service")
-  Container(LS, "Loan Service")
-  Container(US, "User Service")
-  Container(VS, "Validation Service")
-}
+        Container_Boundary(handlers, "Intent Handlers Layer") {
+            Component(agregar_handler, "Agregar Libro Handler", "Python Module", "Handles book creation")
+            Component(listar_handler, "Listar Libros Handler", "Python Module", "Lists all books")
+            Component(buscar_handler, "Buscar Libro Handler", "Python Module", "Searches books by title")
+            Component(eliminar_handler, "Eliminar Libro Handler", "Python Module", "Deletes books")
+            Component(prestar_handler, "Prestar Libro Handler", "Python Module", "Manages book loans")
+            Component(devolver_handler, "Devolver Libro Handler", "Python Module", "Manages book returns")
+            Component(consultar_p_handler, "Consultar Préstamos Handler", "Python Module", "Shows active loans")
+            Component(consultar_d_handler, "Consultar Devueltos Handler", "Python Module", "Shows returned books")
+            Component(decir_titulo_handler, "Decir Título Handler", "Python Module", "Contextual title handler")
+            Component(limpiar_handler, "Limpiar Cache Handler", "Python Module", "Clears all data")
+            Component(system_handlers, "System Handlers", "Python Modules", "Help, Stop, Fallback intents")
+        }
+        
+        Container_Boundary(business, "Business Logic Layer") {
+            Component(biblioteca_service, "Biblioteca Service", "Python Module", "Core business logic for library operations")
+        }
+        
+        Container_Boundary(data_layer, "Data Access Layer") {
+            Component(database_helper, "Database Helper", "Python Module", "State management")
+            Component(session_state, "Session State Manager", "Python Object", "Manages libros, prestamos, devueltos")
+        }
+        
+        Container_Boundary(utilities, "Utilities Layer") {
+            Component(utils, "Utils", "Python Module", "Text normalization functions")
+        }
+    }
 
-Container_Boundary(data, "Data Layer") {
-  Container(BR, "Book Repository")
-  Container(LR, "Loan Repository")
-  Container(UR, "User Repository")
-}
+    Container_Boundary(storage, "Storage Layer") {
+        ComponentDb(session_storage, "Session Attributes", "Alexa Session", "Temporary session storage")
+    }
 
-Container(s3a, "S3 Adapter", "Infrastructure", "Handles storage interactions")
-Container(ca, "Cache Adapter", "Infrastructure", "Caches data for fast access")
-Container(um, "Utils Manager", "Infrastructure", "Utility functions manager")
+    System_Ext(alexa_service, "Alexa Service", "Amazon Alexa Platform")
 
-Container_Boundary(models, "Models") {
-  Container(BM, "Book Model")
-  Container(LM, "Loan Model")
-  Container(U_M, "User Model")
-}
 
-Rel(LH, US, "Calls")
-Rel(ALH, BS, "Calls")
-Rel(LLH, BS, "Calls")
-Rel(PLH, LS, "Calls")
-Rel(RH, LS, "Calls")
-Rel(BS, BR, "Uses")
-Rel(LS, LR, "Uses")
-Rel(US, UR, "Uses")
-Rel(BR, s3a, "Uses")
-Rel(LR, s3a, "Uses")
-Rel(UR, s3a, "Uses")
-Rel(BR, ca, "Uses")
-Rel(LR, ca, "Uses")
-Rel(UR, ca, "Uses")
+  Rel(alexa_service, lambda_handler, "Sends IntentRequest", "HTTPS/JSON")
+    Rel(lambda_handler, intent_router, "Uses")
+    Rel(lambda_handler, database_helper, "Gets state")
+    
+    Rel(intent_router, agregar_handler, "Routes intent")
+    Rel(intent_router, listar_handler, "Routes intent")
+    Rel(intent_router, buscar_handler, "Routes intent")
+    Rel(intent_router, eliminar_handler, "Routes intent")
+    Rel(intent_router, prestar_handler, "Routes intent")
+    Rel(intent_router, devolver_handler, "Routes intent")
+    Rel(intent_router, consultar_p_handler, "Routes intent")
+    Rel(intent_router, consultar_d_handler, "Routes intent")
+    Rel(intent_router, decir_titulo_handler, "Routes intent")
+    Rel(intent_router, limpiar_handler, "Routes intent")
+    Rel(intent_router, system_handlers, "Routes intent")
+    
+    Rel(agregar_handler, biblioteca_service, "Calls add_book()")
+    Rel(listar_handler, biblioteca_service, "Calls list_books()")
+    Rel(buscar_handler, biblioteca_service, "Calls search_books()")
+    Rel(eliminar_handler, biblioteca_service, "Calls delete_book()")
+    Rel(prestar_handler, biblioteca_service, "Calls borrow_book()")
+    Rel(devolver_handler, biblioteca_service, "Calls return_book()")
+    Rel(decir_titulo_handler, biblioteca_service, "Calls add_book() / delete_book()")
+    
+    Rel(agregar_handler, session_state, "Modifies state")
+    Rel(listar_handler, session_state, "Reads state")
+    Rel(buscar_handler, session_state, "Reads state")
+    Rel(eliminar_handler, session_state, "Modifies state")
+    Rel(prestar_handler, session_state, "Modifies state")
+    Rel(devolver_handler, session_state, "Modifies state")
+    Rel(consultar_p_handler, session_state, "Reads state")
+    Rel(consultar_d_handler, session_state, "Reads state")
+    Rel(decir_titulo_handler, session_state, "Modifies state")
+    Rel(limpiar_handler, session_state, "Clears state")
+    
+    Rel(biblioteca_service, utils, "Uses norm()")
+    Rel(biblioteca_service, session_state, "Reads/Writes")
+    
+    Rel(database_helper, session_state, "Creates/Manages")
+    Rel(session_state, session_storage, "Persists to", "Session Attributes")
+    
+    Rel(lambda_handler, alexa_service, "Returns response", "HTTPS/JSON")

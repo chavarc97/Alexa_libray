@@ -1,356 +1,296 @@
 @startuml  
-title C4 - Level 4 - Library Management System
+title C4 - Level 4 - Alexa Biblioteca Skill - Code Diagram
 
 ' ==================== ENUMS ====================
 enum BookStatus {
-    DISPONIBLE : "Disponible"
-    PRESTADO : "Prestado"
-}
-
-enum LoanStatus {
-    ACTIVO : "activo"
-    DEVUELTO : "devuelto"
-    VENCIDO : "vencido"
+    DISPONIBLE : "disponible"
+    PRESTADO : "prestado"
 }
 
 ' ==================== DOMAIN MODELS ====================
-class Book_Model {
+class Book {
     - id: str
     - titulo: str
-    - autor: str 
-    - tipo: str 
-    - fecha_agregado: datetime
+    - autor: str
+    - tipo: str
     - estado: BookStatus
-    - total_prestamos: int : 0
 
-    - __post_init__() : void
-    + prestar() : bool
-    + devolver() : bool
-    + esta_disponible() : bool
-    + coincide_titulo(titulo: str) : bool
-    + coincide_autor(autor: str) : bool
     + to_dict() : dict
-    + from_dict(data: dict) : Book_Model
+    + from_dict(data: dict) : Book
     + __str__() : str
 }
 
-class Loan_Model {
-    - id: str
+class Prestamo {
     - libro_id: str
-    - titulo: str
-    - persona: str : 'un amigo'
-    - fecha_prestamo: Optional[datetime] 
-    - fecha_limite: Optional[datetime] 
-    - fecha_devolucion: Optional[datetime]
-    - estado: LoanStatus
-    - dias_prestamo: int : 7
+    - a: str
 
-    - __post_init__() : void
-    + devolver() : bool
-    + esta_vencido() : bool
-    + dias_restante() : int
-    + fue_devuelto_a_tiempo() : bool
-    + actualizar_estado() : void
-    + coincide_titulo(titulo: str) : bool
     + to_dict() : dict
-    + from_dict(data: dict) : Loan_Model
+    + from_dict(data: dict) : Prestamo
     + __str__() : str
 }
 
 ' ==================== INTERFACES ====================
-interface IDataAdapter {
-  + get_attributes(request_envelope) : Dict[str, Any]
-  + save_attributes(request_envelope, attributes: Dict[str, Any]) : None
-  + delete_attributes(request_envelope) : None
+interface ISessionStorage {
+  + get_state(event) : Dict[str, Any]
+  + save_state(event, state: Dict[str, Any]) : None
 }
 
-interface IBookRepository {
-  + find_all(user_id: str) : List<Book>
-  + find_by_id(user_id: str, book_id: str) : Optional<Book>
-  + find_by_title(user_id: str, title: str) : List<Book>
-  + find_by_author(user_id: str, author: str) : List<Book>
-  + save(user_id: str, book: Book) : None
-  + delete(user_id: str, book_id: str) : bool
-  + exists_title(user_id: str, title: str) : bool
+interface IBookOperations {
+  + add_book(state: Dict, titulo: str, autor: str, tipo: str) : Tuple[bool, Union[str, Book]]
+  + list_books(state: Dict) : List[Book]
+  + search_books(state: Dict, termino: str) : List[Book]
+  + delete_book(state: Dict, titulo: str, libro_id: str) : Tuple[bool, Union[str, Book]]
 }
 
-interface ILoanRepository {
-  + find_active_loans(user_id: str) : List[Loan]
-  + find_loan_history(user_id: str) : [Loan]
-  + find_by_book_id(user_id: str, book_id: str) : Optional<Loan>
-  + find_by_title(user_id: str, title: str) : Optional<Loan>
-  + save_loan(user_id: str, loan: Loan) : None
-  + complete_loan(user_id: str, loan_id: str) : bool
-}
-
-interface ICacheService {
-  + get(key: str) : Optional<Dict[str, Any]>
-  + set(key: str, data: Dict[str, Any], ttl_seconds: int = 3600) : None
-  + delete(key: str) : None
-  + clear_all() : None
+interface ILoanOperations {
+  + borrow_book(state: Dict, libro_or_title: str, persona: str) : Tuple[bool, str]
+  + return_book(state: Dict, libro_or_title: str) : Tuple[bool, str]
 }
 
 ' ==================== DATA LAYER ====================
-class S3DataAdapter {
-  - _bucket_name: str
-  - _s3_adapter: S3Adapter
-  + __init__(bucket_name: str)
-  + get_attributes(request_envelope) : Dict
-  + save_attributes(request_envelope, attributes: Dict) : None
-  + delete_attributes(request_envelope) : None
-  - _get_initial_user_data() : Dict
-  - _validate_and_normalize_data(data: Dict) : Dict
-  - _validate_books_data(data: Dict) : None
-  - _validate_loans_data(data: Dict) : None
-  - _validate_statistics_data(data: Dict) : None
-  - _generate_id() : str
-  - _generate_loan_id() : str
+class DatabaseHelper {
+  + get_state(event) : Dict[str, Any]
+  - _get_initial_state() : Dict[str, Any]
+  - _validate_state(state: Dict) : Dict[str, Any]
 }
 
-class FakeS3DataAdapter {
-  - _store: dict
-  + __init__()
-  + get_attributes(request_envelope) : Dict
-  + save_attributes(request_envelope, attributes: Dict) : None
-  + delete_attributes(request_envelope) : None
-  - _extract_user_id(request_envelope) : str
-}
-
-class MemoryCacheService {
-  - _cache: Dict<str, Dict<str, Any>>
-  + __init__()
-  + get(key: str) : Optional<Dict>
-  + set(key: str, data: Dict, ttl_seconds: int=3600) : None
-  + delete(key: str) : None
-  + clear_all() : None
-  + get_stats() : Dict
-  + cleanup_expired() : int
-  - _estimate_memory_usage() : str
-}
-
-' ==================== REPOSITORIES ====================
-class BookRepository {
-  - _data_adapter: IDataAdapter
-  - _cache_service: Optional<ICacheService>
-  - _cache_ttl: int = 3600
-
-  + __init__(data_adapter: IDataAdapter, cache_service: Optional<ICacheService>)
-  + find_all(user_id: str) : List<Book>
-  + find_by_id(user_id: str, book_id: str) : Optional<Book>
-  + find_by_title(user_id: str, title: str) : List<Book>
-  + find_by_author(user_id: str, author: str) : List<Book>
-  + save(user_id: str, book: Book) : None
-  + delete(user_id: str, book_id: str) : bool
-  + exists_title(user_id: str, title: str) : bool
-  - _get_user_data(user_id: str) : dict
-  - _save_user_data(user_id: str, user_data: dict) : None
-}
-
-class LoanRepository {
-  - _data_adapter: IDataAdapter
-  - _cache_service: Optional<ICacheService>
-  - _cache_ttl: int = 3600
-
-  + __init__(data_adapter: IDataAdapter, cache_service: Optional[ICacheService>)
-  + find_active_loans(user_id: str) : List<Loan>
-  + find_loan_history(user_id: str) : List<Loan>
-  + find_by_book_id(user_id: str, book_id: str) : Optional<Loan>
-  + find_by_title(user_id: str, title: str) : Optional<Loan>
-  + save_loan(user_id: str, loan: Loan) : None
-  + complete_loan(user_id: str, loan_id: str) : bool
-  - _get_user_data(user_id: str) : dict
-  - _save_user_data(user_id: str, user_data: dict) : None
-  - _move_to_history(user_data: dict, loan: Loan) : None
-  - _update_loan_statistics(user_data: dict) : None
-  - _invalidate_cache(user_id: str) : None
+class SessionState {
+  + libros: List[Book]
+  + prestamos: List[Prestamo]
+  + devueltos: List[Prestamo]
+  + __await__: Optional[str]
+  
+  + get_libros() : List[Book]
+  + add_libro(libro: Book) : None
+  + remove_libro(libro_id: str) : bool
+  + clear() : None
 }
 
 ' ==================== SERVICES ====================
-class BookService {
-  + __init__(book_repository: IBookRepository, loan_repository: ILoanRepository)
-  + add_book(user_id: str, titulo: str, autor: str = None, tipo: str = None) : (bool, str, Book)
-  + get_all_books(user_id: str) : [Book]
-  + search_books_by_title(user_id: str, search_term: str) : [Book]
-  + search_books_by_author(user_id: str, search_term: str) : [Book]
-  + get_available_books(user_id: str) : [Book]
-  + get_loaned_books(user_id: str) : [Book]
-  + delete_book(user_id: str, book_id: str = None, title: str = None) : (bool, str, Book)
-  + get_book_statistics(user_id: str) : dict
-  - _sync_book_states(user_id: str, books: [Book]) : [Book]
+class BibliotecaService {
+  + add_book(state: Dict, titulo: str, autor: Optional[str], tipo: Optional[str]) : Tuple[bool, Union[str, Book]]
+  + list_books(state: Dict) : List[Book]
+  + search_books(state: Dict, termino: str) : List[Book]
+  + delete_book(state: Dict, titulo: Optional[str], libro_id: Optional[str]) : Tuple[bool, Union[str, Book]]
+  + borrow_book(state: Dict, libro_or_title: str, persona: Optional[str]) : Tuple[bool, str]
+  + return_book(state: Dict, libro_or_title: str) : Tuple[bool, str]
+  - _next_id(state: Dict) : str
+  - _find_book(state: Dict, libro_id: str, titulo: str) : Optional[Book]
+  - _is_book_loaned(state: Dict, libro_id: str) : bool
 }
 
-class LoanService {
-  + __init__(book_repository: IBookRepository, loan_repository: ILoanRepository)
-  + create_loan(user_id: str, book_title: str = None, book_id: str = None, person_name: str = None, loan_days: int = None) : (bool, str, Loan)
-  + return_loan(user_id: str, book_title: str = None, loan_id: str = None) : (bool, str, Loan)
-  + get_active_loans(user_id: str) : List<Loan>
-  + get_loan_history(user_id: str) : List<Loan>
-  + get_overdue_loans(user_id: str) : List<Loan>
-  + get_loans_due_soon(user_id: str, days_threshold: int = 2) : List<Loan>
-  + get_loan_statistics(user_id: str) : dict
-  + extend_loan(user_id: str, loan_id: str, additional_days: int = 7) : (bool, str, Loan)
+' ==================== UTILITIES ====================
+class Utils {
+  + norm(s: str) : str
 }
 
-' ==================== INFRASTRUCTURE ====================
-class DatabaseManager {
-  - handler_input
-  - data_adapter: IDataAdapter
-  - user_id: str
+' ==================== LAMBDA HANDLER ====================
+class LambdaFunction {
+  - _ROUTES: Dict[str, str]
   
-  + __init__(handler_input, data_adapter: IDataAdapter)
-  + get_user_data_instance() : Dict
-  + save_user_data_instance(data: Dict) : None
-  
-  + {static} get_user_data(handler_input) : Dict
-  + {static} save_user_data(handler_input, data: Dict) : None
-  + {static} initial_data() : Dict
-  + {static} _user_id(handler_input) : str
+  + lambda_handler(event, context) : Dict[str, Any]
+  - _say(text: str, reprompt: str, end: bool, session: Dict) : Dict[str, Any]
+  - _load_handler(intent_name: str) : Callable
+  - _get_state(event: Dict) : Dict[str, Any]
 }
 
-class ServiceFactory {
-  - _data_adapter: IDataAdapter
-  - _cache_service: ICacheService
-  - _book_repository: BookRepository
-  - _loan_repository: LoanRepository
-  - _use_fake_s3: bool
-  - _enable_cache: bool
-  - _s3_bucket: str
-
-  + get_data_adapter() : IDataAdapter
-  + get_cache_service() : ICacheService
-  + get_book_repository(handler_input=None) : BookRepository
-  + get_loan_repository(handler_input=None) : LoanRepository
-  + get_book_service(handler_input=None) : BookService
-  + get_loan_service(handler_input=None) : LoanService
-  + get_database_manager(handler_input) : DatabaseManager
-  + reset_cache() : void
-  + reset_all() : void
-  + configure_for_testing(use_fake_s3: bool, enable_cache: bool) : void
-  + configure_for_production(s3_bucket: str, enable_cache: bool) : void
-  + get_factory_stats() : Dict
+' ==================== INTENT HANDLERS ====================
+abstract class BaseHandler {
+  # _slot(event: Dict, name: str) : Optional[str]
+  + {abstract} handle(event: Dict, state: Dict) : Tuple[str, str]
 }
 
-' ==================== HANDLERS ====================
-
-
-class AddBookIntentHandler {
-  - _service_factory: ServiceFactory
-  + can_handle(handler_input) : bool
-  + handle(handler_input) : Response
-  - _request_title(handler_input) : Response
-  - _request_author(handler_input, titulo: str) : Response
-  - _request_type(handler_input, titulo: str, autor: str) : Response
-  - _create_book(handler_input, book_service: BookService, user_id: str, titulo: str, autor: str, tipo: str) : Response
-  - _handle_validation_error(handler_input, error_message: str) : Response
-  - _handle_error(handler_input) : Response
-  - _extract_user_id(handler_input) : str
+class AgregarLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _validate_titulo(titulo: str) : bool
+  - _request_titulo(state: Dict) : Tuple[str, str]
 }
 
-class ContinueAddingBookHandler {
-  - _service_factory: ServiceFactory
-  + can_handle(handler_input) : bool
-  + handle(handler_input) : Response
-  - _extract_user_response(handler_input) : str
-  - _process_title_response(handler_input, valor: str) : Response
-  - _process_author_response(handler_input, valor: str) : Response
-  - _process_type_response(handler_input, valor: str) : Response
-  - _restart_process(handler_input) : Response
-  - _handle_validation_error(handler_input, error_message: str) : Response
-  - _handle_error(handler_input) : Response
+class ListarLibrosHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _format_book_list(libros: List[Book], max_items: int) : str
 }
 
-class ListBooksIntentHandler
-class DeleteBookIntentHandler
-class LoanBookIntentHandler
-class ReturnBookIntentHandler
-class ConsultarPrestamosIntentHandler
-class ConsultarDevueltosIntentHandler
-class BuscarLibroIntentHandler
-class SiguientePaginaIntentHandler
-class SalirListadoIntentHandler
+class BuscarLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _format_search_results(resultados: List[Book]) : str
+}
 
-' ==================== UTILITY CLASSES ====================
-class ValidationUtils
-class ResponsePhrases
+class EliminarLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _validate_deletion(state: Dict, libro_id: str) : bool
+  - _request_titulo(state: Dict) : Tuple[str, str]
+}
+
+class PrestarLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _validate_loan(libro: Book) : bool
+  - _request_libro(state: Dict) : Tuple[str, str]
+}
+
+class DevolverLibroHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _validate_return(state: Dict, libro_id: str) : bool
+  - _request_libro(state: Dict) : Tuple[str, str]
+}
+
+class ConsultarPrestamosHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _format_prestamos(prestamos: List[Prestamo]) : str
+}
+
+class ConsultarDevueltosHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _format_devueltos(devueltos: List[Prestamo]) : str
+}
+
+class DecirTituloHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+  - _handle_agregar_context(event: Dict, state: Dict, titulo: str) : Tuple[str, str]
+  - _handle_eliminar_context(event: Dict, state: Dict, titulo: str) : Tuple[str, str]
+  - _handle_no_context(titulo: str) : Tuple[str, str]
+}
+
+class LimpiarCacheHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class HelpHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class StopHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class FallbackHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class SiguientePaginaHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
+
+class SalirListadoHandler {
+  - _slot(event: Dict, name: str) : Optional[str]
+  + handle(event: Dict, state: Dict) : Tuple[str, str]
+}
 
 ' ==================== RELATIONSHIPS ====================
 
 ' Interface implementations
-S3DataAdapter ..|> IDataAdapter
-FakeS3DataAdapter ..|> IDataAdapter
-MemoryCacheService ..|> ICacheService
-BookRepository ..|> IBookRepository
-LoanRepository ..|> ILoanRepository
+DatabaseHelper ..|> ISessionStorage
+BibliotecaService ..|> IBookOperations
+BibliotecaService ..|> ILoanOperations
 
-' Repository dependencies
-BookRepository --> IDataAdapter
-BookRepository --> ICacheService
-BookRepository --> Book_Model
+' Lambda Function relationships
+LambdaFunction --> DatabaseHelper : uses
+LambdaFunction ..> AgregarLibroHandler : loads
+LambdaFunction ..> ListarLibrosHandler : loads
+LambdaFunction ..> BuscarLibroHandler : loads
+LambdaFunction ..> EliminarLibroHandler : loads
+LambdaFunction ..> PrestarLibroHandler : loads
+LambdaFunction ..> DevolverLibroHandler : loads
+LambdaFunction ..> ConsultarPrestamosHandler : loads
+LambdaFunction ..> ConsultarDevueltosHandler : loads
+LambdaFunction ..> DecirTituloHandler : loads
+LambdaFunction ..> LimpiarCacheHandler : loads
+LambdaFunction ..> HelpHandler : loads
+LambdaFunction ..> StopHandler : loads
+LambdaFunction ..> FallbackHandler : loads
+LambdaFunction ..> SiguientePaginaHandler : loads
+LambdaFunction ..> SalirListadoHandler : loads
 
-LoanRepository --> IDataAdapter
-LoanRepository --> ICacheService
-LoanRepository --> Loan_Model
+' Handler inheritance
+AgregarLibroHandler --|> BaseHandler
+ListarLibrosHandler --|> BaseHandler
+BuscarLibroHandler --|> BaseHandler
+EliminarLibroHandler --|> BaseHandler
+PrestarLibroHandler --|> BaseHandler
+DevolverLibroHandler --|> BaseHandler
+ConsultarPrestamosHandler --|> BaseHandler
+ConsultarDevueltosHandler --|> BaseHandler
+DecirTituloHandler --|> BaseHandler
+LimpiarCacheHandler --|> BaseHandler
+HelpHandler --|> BaseHandler
+StopHandler --|> BaseHandler
+FallbackHandler --|> BaseHandler
+SiguientePaginaHandler --|> BaseHandler
+SalirListadoHandler --|> BaseHandler
 
-' Service dependencies
-BookService --> IBookRepository
-BookService --> ILoanRepository
-BookService --> Book_Model
-BookService --> BookStatus
+' Handler to Service dependencies
+AgregarLibroHandler --> BibliotecaService : uses add_book()
+ListarLibrosHandler --> BibliotecaService : uses list_books()
+BuscarLibroHandler --> BibliotecaService : uses search_books()
+EliminarLibroHandler --> BibliotecaService : uses delete_book()
+PrestarLibroHandler --> BibliotecaService : uses borrow_book()
+DevolverLibroHandler --> BibliotecaService : uses return_book()
+DecirTituloHandler --> BibliotecaService : uses add_book(), delete_book()
 
-LoanService --> IBookRepository
-LoanService --> ILoanRepository
-LoanService --> Book_Model
-LoanService --> Loan_Model
-LoanService --> BookStatus
-LoanService --> LoanStatus
+' Handler to State dependencies
+AgregarLibroHandler --> SessionState : modifies
+ListarLibrosHandler --> SessionState : reads
+BuscarLibroHandler --> SessionState : reads
+EliminarLibroHandler --> SessionState : modifies
+PrestarLibroHandler --> SessionState : modifies
+DevolverLibroHandler --> SessionState : modifies
+ConsultarPrestamosHandler --> SessionState : reads
+ConsultarDevueltosHandler --> SessionState : reads
+DecirTituloHandler --> SessionState : modifies
+LimpiarCacheHandler --> SessionState : clears
 
-' Factory dependencies
-ServiceFactory --> IDataAdapter
-ServiceFactory --> ICacheService
-ServiceFactory --> BookRepository
-ServiceFactory --> LoanRepository
-ServiceFactory --> BookService
-ServiceFactory --> LoanService
-ServiceFactory --> DatabaseManager
+' Service to Utils and State
+BibliotecaService --> Utils : uses norm()
+BibliotecaService --> SessionState : reads/writes
 
-DatabaseManager --> IDataAdapter
-DatabaseManager ..> ICacheService : "usa en métodos estáticos"
-
-' Handler dependencies
-AddBookIntentHandler --> ServiceFactory
-ContinueAddingBookHandler --> ServiceFactory
-
-AddBookIntentHandler --> ValidationUtils : valida
-ContinueAddingBookHandler --> ValidationUtils : valida
-AddBookIntentHandler --> ResponsePhrases : frases
-ContinueAddingBookHandler --> ResponsePhrases : frases
-
-' Handler-service relationships
-ListBooksIntentHandler --> BookService
-ListBooksIntentHandler --> MemoryCacheService
-DeleteBookIntentHandler --> BookService
-DeleteBookIntentHandler --> LoanService
-LoanBookIntentHandler --> BookService
-LoanBookIntentHandler --> LoanService
-LoanBookIntentHandler --> DatabaseManager
-ReturnBookIntentHandler --> BookService
-ReturnBookIntentHandler --> LoanService
-ReturnBookIntentHandler --> DatabaseManager
-ConsultarPrestamosIntentHandler --> LoanService
-ConsultarPrestamosIntentHandler --> DatabaseManager
-ConsultarDevueltosIntentHandler --> LoanService
-ConsultarDevueltosIntentHandler --> DatabaseManager
-BuscarLibroIntentHandler --> BookService
-BuscarLibroIntentHandler --> MemoryCacheService
-SiguientePaginaIntentHandler --> BookService
-SiguientePaginaIntentHandler --> MemoryCacheService
-SalirListadoIntentHandler --> MemoryCacheService
+' DatabaseHelper to SessionState
+DatabaseHelper --> SessionState : creates/manages
 
 ' Model relationships
-Loan_Model --> LoanStatus
-Book_Model --> BookStatus
+SessionState *-- Book : contains
+SessionState *-- Prestamo : contains
+Book --> BookStatus : uses
+Prestamo --> Book : references by libro_id
 
-' Data adapter relationship
-FakeS3DataAdapter --> S3DataAdapter : reutiliza _get_initial_user_data()
+' Notes
+note right of LambdaFunction
+  Entry point for all Alexa requests.
+  Routes intents to appropriate handlers
+  using the _ROUTES dictionary.
+end note
+
+note right of BibliotecaService
+  Core business logic layer.
+  Handles all CRUD operations for books,
+  loans, and returns. Uses Utils for
+  text normalization.
+end note
+
+note right of SessionState
+  In-memory state storage using
+  Alexa sessionAttributes.
+  Persists between intents within
+  the same session.
+end note
+
+note right of DecirTituloHandler
+  Context-aware handler that processes
+  title input based on conversation state
+  (__await__ flag in SessionState).
+end note
 
 @enduml
