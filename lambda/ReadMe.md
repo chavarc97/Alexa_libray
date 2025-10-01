@@ -886,23 +886,26 @@ Monolito original → Responsabilidades identificadas:
 
 #### Paso 2: Aplicación de principios SOLID
 
-1. **Single Responsibility Principle:**
-   * Cada handler maneja solo un intent específico
-   * Services contienen solo lógica de un dominio
-   * Repositories solo acceso a datos
-2. **Open/Closed Principle:**
-   * Interfaces para adapters permiten extensión sin modificación
-   * Nuevos tipos de libros se agregan sin cambiar código existente
-3. **Liskov Substitution Principle:**
-   * S3Adapter y FakeS3Adapter son intercambiables
-   * Diferentes estrategias de cache implementan misma interfaz
-4. **Interface Segregation Principle:**
-   * Interfaces específicas para cada tipo de operación
-   * No dependencias en métodos no utilizados
-5. **Dependency Inversion Principle:**
-   * Services dependen de abstracciones, no implementaciones
-   * Inyección de dependencias en constructores
+**Single Responsibility Principle:
+Cada handler maneja solo un intent específico. Los servicios contienen solo la lógica de un dominio. Los repositorios deben ocuparse únicamente del acceso a datos.
 
+**Open/Closed Principle:
+Las interfaces para adapters permiten extender sin modificar el código existente. Nuevos tipos de libros se pueden agregar sin cambiar lógica base.
+
+**Liskov Substitution Principle:
+S3Adapter y FakeS3Adapter son intercambiables. Diferentes estrategias de caché implementan la misma interfaz.
+
+**Interface Segregation Principle:
+Se definen interfaces específicas para cada tipo de operación. No hay dependencias innecesarias en métodos que no se usan.
+
+**Dependency Inversion Principle:
+Los servicios dependen de abstracciones y no de implementaciones concretas. Se aplican inyecciones de dependencias en los constructores.
+
+Dividir en BookService y LoanService si aumenta la complejidad.
+
+Implementar un módulo de respuestas común.
+
+Preparar repositorios para migrar a S3/Dynamo sin alterar los handlers.
 #### Paso 3: Reestructuración de archivos
 
 ```markdown
