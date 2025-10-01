@@ -828,7 +828,9 @@ Ver mas diagrmas en ./VUI_diagrams
 ## 7. Secciones adicionales
 
 ##Modelo de datos
+
 ##Libro
+```markdown
 {
 "id": str, # se genera automáticamente
 "titulo": str, # normalizado para evitar duplicados
@@ -836,13 +838,15 @@ Ver mas diagrmas en ./VUI_diagrams
 "tipo": str, # género o categoría del libro
 "estado": str # "disponible" o "prestado"
 }
+```
 ##Loan
+```markdown
 # Prestamos activos
 {"libro_id": str, "persona": str}
 
-
 # Devueltos
 {"libro_id": str, "persona": str}
+```
 
 ## 8. Apéndices
 
